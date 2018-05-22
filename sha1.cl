@@ -31,15 +31,15 @@ uint K(uint t) {
 	}
 }
 
-__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
+void sha1func(__constant unsigned int* file, __constant unsigned long* filesize, unsigned int* H) {
 	uint MASK = 0x0000000F;
 	uint W[16];
-	uint H[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
 	uint A, B, C, D, E;
 
 	for (int i = 0; i < (*filesize/ 16); i++) {
-		for (int j = 0; j < 16; j++)
+		for (int j = 0; j < 16; j++) {
 			  W[j] = file[16*i+j];
+		}
 
 		A = H[0];
 		B = H[1];
@@ -72,6 +72,12 @@ __kernel void sha1(__constant unsigned int* file, __constant unsigned long* file
 		H[3] = plus(H[3], D);
 		H[4] = plus(H[4], E);
 	}
+
+}
+
+__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
+	uint H[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
+	sha1func(file, filesize, &H);
 
 	for (int i = 0; i < 5; i++)
 		res[i] = H[i];
