@@ -31,17 +31,15 @@ uint K(uint t) {
 	}
 }
 
-__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned long* res)
-{
+__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
 	uint MASK = 0x0000000F;
 	uint W[16];
 	uint H[5] = {0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0};
 	uint A, B, C, D, E;
 
-	for (int i = 0; i < (*filesize / 16); i++) {
-		for (int j = 0; j < 16; j++) {
+	for (int i = 0; i < (*filesize/ 16); i++) {
+		for (int j = 0; j < 16; j++)
 			  W[j] = file[16*i+j];
-		}
 
 		A = H[0];
 		B = H[1];
@@ -75,14 +73,12 @@ __kernel void sha1(__constant unsigned int* file, __constant unsigned long* file
 		H[4] = plus(H[4], E);
 	}
 
-	for (int i = 0; i < 5; i++) {
-		printf("%08X", H[i]);
-	}
+	for (int i = 0; i < 5; i++)
+		res[i] = H[i];
 
-	/*for (int i = 0; i < *filesize; i++) {
-		 printf("%08X", file[i]);
-		 if (i % 8 == 0) {
-		 	//printf("\n");
-		}
-	}*/
+	//for (int i = 0; i < 5; i++)
+		//printf("%08X", H[i]);
+
+	//for (int i = 0; i < buf_size; i++)
+		 //printf("%08X", file[i]);
 }

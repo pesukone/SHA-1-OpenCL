@@ -72,33 +72,36 @@ int main(int argc, char** argv) {
 
 	cl_mem in_buf = clCreateBuffer(context, CL_MEM_READ_ONLY, buf_bytes, NULL, &ret);
 	cl_mem in_size = clCreateBuffer(context, CL_MEM_READ_ONLY, sizeof(unsigned long), NULL, &ret);
-	cl_mem res_buf = clCreateBuffer(context, CL_MEM_WRITE_ONLY, sizeof(unsigned long), NULL, &ret);
+	cl_mem res_buf = clCreateBuffer(context, CL_MEM_WRITE_ONLY, 5 * sizeof(unsigned int), NULL, &ret);
 
 	ret = clEnqueueWriteBuffer(queue, in_buf, CL_TRUE, 0, buf_bytes, int_buf, 0, NULL, NULL);
 	ret = clEnqueueWriteBuffer(queue, in_size, CL_TRUE, 0, sizeof(unsigned long), &buf_ints, 0, NULL, NULL);
-	ret = clEnqueueFillBuffer(queue, res_buf, (unsigned long[1]){0}, sizeof(unsigned long), 0, sizeof(unsigned long), 0, NULL, NULL);
+	ret = clEnqueueFillBuffer(queue, res_buf, (unsigned int[1]){0}, sizeof(unsigned long), 0, sizeof(unsigned long), 0, NULL, NULL);
 
 	ret = clSetKernelArg(kernel, 0, sizeof(cl_mem), &in_buf);
 	ret = clSetKernelArg(kernel, 1, sizeof(unsigned long), &in_size);
 	ret = clSetKernelArg(kernel, 2, sizeof(cl_mem), &res_buf);
 
-	if (ret != CL_SUCCESS) {
+	if (ret != CL_SUCCESS)
 		printf("%d\n", (int) ret);
-	}
 
 	ret = clEnqueueNDRangeKernel(queue, kernel, 1, 0, (unsigned long[1]){1}, NULL, 0, NULL, NULL);
+	unsigned int res[5];
+	ret = clEnqueueReadBuffer(queue, res_buf, CL_TRUE, 0, 5 * sizeof(unsigned int), &res, 0, NULL, NULL);
 
 	ret = clFlush(queue);
 
-	if (ret != CL_SUCCESS) {
+	if (ret != CL_SUCCESS)
 		printf("%d\n", (int) ret);
-	}
 
 	ret = clFinish(queue);
 	ret = clReleaseKernel(kernel);
 	ret = clReleaseProgram(program);
 	ret = clReleaseCommandQueue(queue);
 	ret = clReleaseContext(context);
+
+	for (int i = 0; i < 5; i++)
+		printf("%08X\n", res[i]);
 
 	free(source_str);
 	free(int_buf);
