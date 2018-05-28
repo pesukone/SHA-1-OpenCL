@@ -11,8 +11,8 @@ uint f(uint t, uint B, uint C, uint D) {
 }
 
 uint plus(uint X, uint Y) {
-	//return (X + Y) % convert_uint(pow(2.0, 32.0));
-	return (X + Y) & convert_uint(native_powr(2.0, 32.0) - 1.0);
+	//return (X + Y) & convert_uint(native_powr(2.0, 32.0) - 1.0);
+	return (X + Y) & 0xFFFFFFFF;
 }
 
 uint shift(uint n, uint X) {
