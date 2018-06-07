@@ -69,22 +69,15 @@ uint8 sha1func(uint16 in, uint8 H) {
 					plus(H.s4, E), 0, 0, 0);
 }
 
-uint8 hash_padding(__constant unsigned int* file, __constant unsigned long* filesize, uint8 H, int i) {
-	uint buf[16] = {0};
-
-	while (i < *filesize) {
-		buf[i % 16] = file[i];
-		i++;
-	}
-
-	buf[i % 16] = 0x80000000;
-	buf[15] = *filesize * 32;
+uint8 hash_padding(uint* tail, int tail_length, uint8 H, __constant unsigned long* filesize) {
+	tail[tail_length] = 0x80000000;
+	tail[15] = *filesize * 32;
 
 	uint16 W = (uint16) (
-					buf[0], buf[1], buf[2], buf[3],
-					buf[4], buf[5], buf[6], buf[7],
-					buf[8], buf[9], buf[10], buf[11],
-					buf[12], buf[13], buf[14], buf[15]
+					tail[0], tail[1], tail[2], tail[3],
+					tail[4], tail[5], tail[6], tail[7],
+					tail[8], tail[9], tail[10], tail[11],
+					tail[12], tail[13], tail[14], tail[15]
 				);
 
 	return sha1func(W, H);
@@ -104,7 +97,13 @@ uint8 hash_file(__constant unsigned int* file, __constant unsigned long* filesiz
 		i += 16;
 	}
 
-	return hash_padding(file, filesize, H, i);
+	int tail_len = *filesize - i;
+	uint tail[16] = {0};
+
+	for (int j = 0; j < tail_len; j++)
+		tail[j] = file[i+j];
+
+	return hash_padding(&tail, tail_len, H, filesize);
 }
 
 __kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
