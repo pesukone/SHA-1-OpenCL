@@ -36,26 +36,20 @@ int main(int argc, char** argv) {
 	unsigned char file_buf[filesize];
 
 	unsigned long buf_bytes = filesize;
-	unsigned long ints_start = filesize / sizeof(unsigned int);
 
 	fread(&file_buf, sizeof(char), filesize, fp);
 	fclose(fp);
 
-	while ((8 * ++buf_bytes) % 512 != 0);
-
 	unsigned long buf_ints = buf_bytes / sizeof(unsigned int);
 	unsigned int* int_buf = calloc(buf_ints, sizeof(unsigned int));
 
-	for (int i = 0; i < ints_start; i++) {
+	for (int i = 0; i < buf_ints; i++) {
 		int_buf[i] =
 			((file_buf[i * sizeof(unsigned int)] << 24) & 0xFF000000) |
 			((file_buf[i * sizeof(unsigned int) + 1] << 16) & 0xFF0000) |
 			((file_buf[i * sizeof(unsigned int) + 2] << 8) & 0xFF00) |
 			(file_buf[i * sizeof(unsigned int) + 3]);
 	}
-
-	int_buf[ints_start] = 0x80000000;
-	int_buf[buf_ints - 1] = filesize * 8;
 
 	ret = clGetPlatformIDs(1, platforms, &ret_num_platforms);
 	ret = clGetDeviceIDs(platforms[0], CL_DEVICE_TYPE_GPU, 1, devices, &ret_num_devices);
@@ -100,6 +94,7 @@ int main(int argc, char** argv) {
 	ret = clReleaseCommandQueue(queue);
 	ret = clReleaseContext(context);
 
+	printf("\n");
 	for (int i = 0; i < 5; i++)
 		printf("%08X\n", res[i]);
 
