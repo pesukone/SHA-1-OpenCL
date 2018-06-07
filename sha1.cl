@@ -69,23 +69,7 @@ uint8 sha1func(uint16 in, uint8 H) {
 					plus(H.s4, E), 0, 0, 0);
 }
 
-__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
-	uint8 H = (uint8) (0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0, 0, 0, 0);
-	uint16 W;
-
-	int i = 0;
-
-	while (i + 16 < *filesize) {
-		W = 	(uint16) (
-					file[i], file[i+1], file[i+2], file[i+3],
-					file[i+4], file[i+5], file[i+6], file[i+7],
-					file[i+8], file[i+9], file[i+10], file[i+11],
-					file[i+12], file[i+13], file[i+14], file[i+15]
-				);
-		H = sha1func(W, H);
-		i += 16;
-	}
-
+uint8 hash_padding(__constant unsigned int* file, __constant unsigned long* filesize, uint8 H, int i) {
 	uint buf[16] = {0};
 
 	while (i < *filesize) {
@@ -96,12 +80,36 @@ __kernel void sha1(__constant unsigned int* file, __constant unsigned long* file
 	buf[i % 16] = 0x80000000;
 	buf[15] = *filesize * 32;
 
-	W = (uint16) ( 	buf[0], buf[1], buf[2], buf[3],
+	uint16 W = (uint16) (
+					buf[0], buf[1], buf[2], buf[3],
 					buf[4], buf[5], buf[6], buf[7],
 					buf[8], buf[9], buf[10], buf[11],
-					buf[12], buf[13], buf[14], buf[15] 	);
+					buf[12], buf[13], buf[14], buf[15]
+				);
 
-	H = sha1func(W, H);
+	return sha1func(W, H);
+}
+
+uint8 hash_file(__constant unsigned int* file, __constant unsigned long* filesize, uint8 H) {
+	int i = 0;
+
+	while (i + 16 < *filesize) {
+		uint16 W = 	(uint16) (
+						file[i], file[i+1], file[i+2], file[i+3],
+						file[i+4], file[i+5], file[i+6], file[i+7],
+						file[i+8], file[i+9], file[i+10], file[i+11],
+						file[i+12], file[i+13], file[i+14], file[i+15]
+					);
+		H = sha1func(W, H);
+		i += 16;
+	}
+
+	return hash_padding(file, filesize, H, i);
+}
+
+__kernel void sha1(__constant unsigned int* file, __constant unsigned long* filesize, __global unsigned int* res) {
+	uint8 H = (uint8) (0x67452301, 0xEFCDAB89, 0x98BADCFE, 0x10325476, 0xC3D2E1F0, 0, 0, 0);
+	H = hash_file(file, filesize, H);
 
 	res[0] = H.s0;
 	res[1] = H.s1;
